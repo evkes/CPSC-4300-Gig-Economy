@@ -16,9 +16,9 @@ stopwords = nltk.corpus.stopwords.words('english')
 
 def preprocess_reviews(dataset):
     translator = str.maketrans('', '', string.punctuation)
-    return [TextBlob(review.translate(translator)) for review in dataset["Review Body"]]
+    return [TextBlob(review.translate(translator)).correct() for review in dataset["Review Body"]]
 
-def get_sentiment_and_counts(dataset):
+def get_sentiment_and_counts(dataset=None, str=None):
     sentiment = {}
     for blob in dataset["Review Body"]:
         for word in blob.words:
@@ -72,3 +72,6 @@ def perform_SVC(model, exclude, X_train, y_train, X_test, y_test):
     model.fit(X_train.loc[:, exclude], y_train)
     predictions = model.predict(X_test.loc[:, exclude])
     return y_test, predictions
+
+def predict(model, X):
+    return model.predict(X)
