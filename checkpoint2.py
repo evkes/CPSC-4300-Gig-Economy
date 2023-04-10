@@ -1,7 +1,9 @@
 import nltk
 import string
 import pandas as pd
+import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
 from textblob.classifiers import NaiveBayesClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, recall_score, precision_score, f1_score
@@ -48,11 +50,20 @@ def plot_sentiment(top_sentiment, bottom_sentiment):
     plt.legend(["Positive", "Negative"])
     plt.show()
 
+def get_metrics(true, predictions):
+    accuracy = accuracy_score(true, predictions)
+    recall = recall_score(true, predictions)
+    precision = precision_score(true, predictions)
+    f1 = f1_score(true, predictions)
+    return np.array([accuracy, recall, precision, f1])
+
 def print_metrics(true, predictions):
-    print("Accuracy:", accuracy_score(true, predictions))
-    print("Recall:", recall_score(true, predictions))
-    print("Precision:", precision_score(true, predictions))
-    print("F1:", f1_score(true, predictions))
+    accuracy, recall, precision, f1 = get_metrics(true, predictions)
+    print("Accuracy:", accuracy)
+    print("Recall:", recall)
+    print("Precision:", precision)
+    print("F1:", f1)
+    
 
 def plot_metrics(model_results, title="Metrics", ax=None):
     if not ax:
@@ -72,6 +83,21 @@ def perform_SVC(model, exclude, X_train, y_train, X_test, y_test):
     model.fit(X_train.loc[:, exclude], y_train)
     predictions = model.predict(X_test.loc[:, exclude])
     return y_test, predictions
+
+def validate_model(model, splits, X, y):
+    kf = KFold(n_splits=splits)
+    total = []
+    if not isinstance(X, np.ndarray):
+        X = X.to_numpy()
+        y = y.to_numpy()
+    for train, test in kf.split(X):
+        model.fit(X[train], y[train])
+        predictions = model.predict(X[test])
+        total.append([*get_metrics(y[test], predictions), model.score(X[test], y[test])])
+
+    total = np.array(total)
+    return total.mean(axis=0)
+
 
 def predict(model, X):
     return model.predict(X)
