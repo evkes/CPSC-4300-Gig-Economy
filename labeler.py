@@ -4,6 +4,7 @@ UBER_DATA = "uber_cleaned.csv"
 LYFT_DATA = "lyft_cleaned.csv"
 SAVE_FREQUENCY = 10
 
+print("*******\nWelcome to the dataset labeler! Please mark invalid rows for deletion when they appear.\n*******")
 dataset = input("Which dataset would you like to label? (uber/lyft) ")
 data = None
 if (dataset == "uber"):
@@ -26,9 +27,13 @@ if isinstance(data, pd.DataFrame):
     while True:
         print_important_row_info(data.iloc[index], index)
         unfair = ""
-        while unfair not in ['y', 'n']:
-            unfair = input("Is this review unfair? (y/n) ")
-        data.loc[index, "Unfair"] = unfair == 'y'
+        while unfair not in ['y', 'n', 'delete']:
+            unfair = input("Is this review unfair? (y/n/delete) ")
+        if unfair == 'delete':
+            data.drop(index)
+            print("Deleted.")
+        else:
+            data.loc[index, "Unfair"] = unfair == 'y'
         index += 1
 
         if index % SAVE_FREQUENCY == 0:
