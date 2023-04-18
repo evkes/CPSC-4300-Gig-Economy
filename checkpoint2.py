@@ -3,9 +3,10 @@ import string
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from textblob.classifiers import NaiveBayesClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, recall_score, precision_score, f1_score
 from textblob import TextBlob
 from matplotlib import pyplot as plt
@@ -23,6 +24,8 @@ def preprocess_reviews(dataset):
 def get_sentiment_and_counts(dataset=None, str=None):
     sentiment = {}
     for blob in dataset["Review Body"]:
+        if not isinstance(blob, TextBlob):
+            blob = TextBlob(blob)
         for word in blob.words:
             if word not in stopwords and len(word) > 2:
                 if word not in sentiment:
@@ -85,15 +88,12 @@ def perform_SVC(model, exclude, X_train, y_train, X_test, y_test):
     return y_test, predictions
 
 def validate_model(model, splits, X, y):
-    kf = KFold(n_splits=splits)
+    kf = StratifiedKFold(n_splits=splits)
     total = []
-    if not isinstance(X, np.ndarray):
-        X = X.to_numpy()
-        y = y.to_numpy()
-    for train, test in kf.split(X):
-        model.fit(X[train], y[train])
-        predictions = model.predict(X[test])
-        total.append([*get_metrics(y[test], predictions), model.score(X[test], y[test])])
+    for train, test in kf.split(X, y):
+        model.fit(X.iloc[train], y.iloc[train])
+        predictions = model.predict(X.iloc[test])
+        total.append([*get_metrics(y.iloc[test], predictions), model.score(X.iloc[test], y.iloc[test])])
 
     total = np.array(total)
     return total.mean(axis=0)
