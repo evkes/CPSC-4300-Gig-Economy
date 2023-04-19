@@ -7,7 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from textblob.classifiers import NaiveBayesClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, recall_score, precision_score, f1_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, recall_score, precision_score, f1_score, r2_score
 from textblob import TextBlob
 from matplotlib import pyplot as plt
 from sklearn.svm import SVC
@@ -91,10 +91,16 @@ def validate_model(model, splits, X, y):
     kf = StratifiedKFold(n_splits=splits)
     total = []
     for train, test in kf.split(X, y):
-        model.fit(X.iloc[train], y.iloc[train])
-        predictions = model.predict(X.iloc[test])
-        total.append([*get_metrics(y.iloc[test], predictions), model.score(X.iloc[test], y.iloc[test])])
-
+        if isinstance(X, pd.DataFrame):
+            model.fit(X.iloc[train], y.iloc[train])
+            predictions = model.predict(X.iloc[test])
+            total.append([*get_metrics(y.iloc[test], predictions)])
+        else:
+            model.fit(X[train], y[train])
+            predictions = model.predict(X[test])
+            total.append([*get_metrics(y[test], predictions)])
+    
+    model.fit(X, y)
     total = np.array(total)
     return total.mean(axis=0)
 
