@@ -90,16 +90,21 @@ def perform_SVC(model, exclude, X_train, y_train, X_test, y_test):
 def validate_model(model, splits, X, y):
     kf = StratifiedKFold(n_splits=splits)
     total = []
+    correct = 0
+    num_samples = 0
     for train, test in kf.split(X, y):
         if isinstance(X, pd.DataFrame):
             model.fit(X.iloc[train], y.iloc[train])
             predictions = model.predict(X.iloc[test])
-            total.append([*get_metrics(y.iloc[test], predictions)])
+            correct = np.count_nonzero(y.iloc[test] == predictions)
+            num_samples = X.iloc[test].shape[0]
+            total.append([*get_metrics(y.iloc[test], predictions), correct, num_samples])
         else:
             model.fit(X[train], y[train])
             predictions = model.predict(X[test])
-            total.append([*get_metrics(y[test], predictions)])
-    
+            correct = np.count_nonzero(y[test] == predictions)
+            num_samples = X[test].shape[0]
+            total.append([*get_metrics(y[test], predictions), correct, num_samples])
     model.fit(X, y)
     total = np.array(total)
     return total.mean(axis=0)
